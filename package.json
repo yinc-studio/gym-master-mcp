@@ -1,0 +1,25 @@
+{
+  "name": "gym-master-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local MCP server for GymMaster Reporting API v2 KPI data (Performance Gaines).",
+  "type": "module",
+  "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "smoke": "tsx src/smoke/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

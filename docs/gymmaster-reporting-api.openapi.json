@@ -1,0 +1,993 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GymMaster: KPI, Reporting and Dashboard API V2",
+    "version": "v1600"
+  },
+  "paths": {
+    "/api/v2/report/kpi/categories/list": {
+      "get": {
+        "tags": [
+          "KPI"
+        ],
+        "summary": "KPI Categories List",
+        "description": "All the available categories that are used to group together KPI fields",
+        "operationId": "api_v2.v2_kpi_categories_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": [
+                    "member_statistics",
+                    "member_activity",
+                    "membership_activity",
+                    "sales_made",
+                    "payment_method",
+                    "booking_summary",
+                    "class_summary"
+                  ],
+                  "error": null
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "report": []
+          }
+        ]
+      }
+    },
+    "/api/v2/report/kpi/categories": {
+      "post": {
+        "tags": [
+          "KPI"
+        ],
+        "summary": "KPI - Filter By Category",
+        "description": "Uses an array of categories to grab values. These values may be grouped by category or left in one large array.",
+        "operationId": "api_v2.v2_kpi_categories",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "date": {
+                    "$ref": "#/components/schemas/DateFilter"
+                  },
+                  "selected_categories": {
+                    "examples": [
+                      [
+                        "sales_made",
+                        "class_summary"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string"
+                    },
+                    "title": "Selected Categories",
+                    "type": "array"
+                  },
+                  "grouped_categories": {
+                    "default": true,
+                    "title": "Grouped Categories",
+                    "type": "boolean"
+                  },
+                  "company_id": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Company Id"
+                  }
+                },
+                "required": [
+                  "date",
+                  "selected_categories"
+                ],
+                "title": "KPICategoryRequest",
+                "type": "object"
+              }
+            }
+          },
+          "description": "api_request"
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Grouped": {
+                    "value": {
+                      "result": {
+                        "sales_made": [
+                          {
+                            "money": {
+                              "name": "Total Sales",
+                              "id": 1,
+                              "metric": "money",
+                              "quantity": 0,
+                              "taxvalue": "$0.00",
+                              "tooltip": null,
+                              "value": 0.0,
+                              "formatted_value": "$0.00"
+                            }
+                          }
+                        ],
+                        "class_summary": [
+                          {
+                            "attendees": {
+                              "name": "Total class attendants",
+                              "id": 1,
+                              "metric": "attendees",
+                              "quantity": null,
+                              "taxvalue": null,
+                              "tooltip": null,
+                              "value": 0,
+                              "formatted_value": "0 attendees"
+                            }
+                          }
+                        ]
+                      },
+                      "error": []
+                    }
+                  },
+                  "Ungrouped": {
+                    "value": {
+                      "result": [
+                        {
+                          "money": {
+                            "name": "Total Sales",
+                            "id": 1,
+                            "metric": "money",
+                            "quantity": 0,
+                            "taxvalue": "$0.00",
+                            "tooltip": null,
+                            "value": 0.0,
+                            "formatted_value": "$0.00"
+                          }
+                        },
+                        {
+                          "attendees": {
+                            "name": "Total class attendants",
+                            "id": 1,
+                            "metric": "attendees",
+                            "quantity": null,
+                            "taxvalue": null,
+                            "tooltip": null,
+                            "value": 0,
+                            "formatted_value": "0 attendees"
+                          }
+                        }
+                      ],
+                      "error": []
+                    }
+                  }
+                },
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "anyOf": [
+                        {
+                          "additionalProperties": {
+                            "items": {
+                              "additionalProperties": {
+                                "$ref": "#/components/schemas/KPIRow"
+                              },
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "type": "object"
+                        },
+                        {
+                          "items": {
+                            "additionalProperties": {
+                              "$ref": "#/components/schemas/KPIRow"
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        }
+                      ],
+                      "title": "Result"
+                    },
+                    "error": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Error",
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "result",
+                    "error"
+                  ],
+                  "title": "ResultError[Union[dict[str, list[dict[str, KPIRow]]], list[dict[str, KPIRow]]], list[str]]",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "report": []
+          }
+        ]
+      }
+    },
+    "/api/v2/report/kpi/fields/list": {
+      "get": {
+        "tags": [
+          "KPI"
+        ],
+        "summary": "KPI Fields List",
+        "description": "All the available Categories that are used to group together KPI fields.",
+        "operationId": "api_v2.v2_kpi_fields_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": [
+                    "current_members",
+                    "female_members",
+                    "male_members",
+                    "average_age",
+                    "hold_members_gifted",
+                    "hold_members_not_gifted",
+                    "avg_holdtime",
+                    "avg_member_time",
+                    "new_memberships",
+                    "renewed_memberships",
+                    "expiring_memberships",
+                    "cancellations_period_by_reason",
+                    "membership_retention"
+                  ],
+                  "error": null
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "report": []
+          }
+        ]
+      }
+    },
+    "/api/v2/report/kpi/fields": {
+      "post": {
+        "tags": [
+          "KPI"
+        ],
+        "summary": "KPI - Filter By Fields",
+        "description": "Get individual kpi fields for a given date. These fields may return single set of values, as is found in the Members Statistics group, or return an array of values - (Sales Made Group)",
+        "operationId": "api_v2.v2_kpi_fields",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "date": {
+                    "$ref": "#/components/schemas/DateFilter"
+                  },
+                  "selected_fields": {
+                    "examples": [
+                      [
+                        "current_members",
+                        "new_memberships"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string"
+                    },
+                    "title": "Selected Fields",
+                    "type": "array"
+                  },
+                  "company_id": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Company Id"
+                  }
+                },
+                "required": [
+                  "date",
+                  "selected_fields"
+                ],
+                "title": "KPIFieldRequest",
+                "type": "object"
+              }
+            }
+          },
+          "description": "filter"
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": {
+                    "current_members": {
+                      "name": "Current members",
+                      "id": 1,
+                      "metric": "members",
+                      "quantity": null,
+                      "taxvalue": null,
+                      "tooltip": "Includes anyone who has been a current member in this period. Some may have expired or were cancelled, but were current at one stage during the period",
+                      "value": 164,
+                      "formatted_value": "164 members"
+                    },
+                    "new_memberships": {
+                      "name": "New memberships signed up",
+                      "id": 1,
+                      "metric": "memberships",
+                      "quantity": null,
+                      "taxvalue": null,
+                      "tooltip": "Memberships Sold in the specified time period",
+                      "value": 0,
+                      "formatted_value": "0 memberships"
+                    }
+                  },
+                  "error": []
+                },
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/KPIRow"
+                      },
+                      "title": "Result",
+                      "type": "object"
+                    },
+                    "error": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Error",
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "result",
+                    "error"
+                  ],
+                  "title": "ResultError[dict[str, KPIRow], list[str]]",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "report": []
+          }
+        ]
+      }
+    },
+    "/api/v2/report/standard_report/list": {
+      "get": {
+        "tags": [
+          "Report"
+        ],
+        "summary": "Available Reports",
+        "description": "List of all the available report names and their ID's",
+        "operationId": "api_v2.v2_standard_report_list",
+        "parameters": [
+          {
+            "name": "predefined_only",
+            "in": "query",
+            "description": "Exclude copies of reports generated by the user. Defaults to true. Query parameter value if supplied will be coerced to a boolean",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": [
+                    {
+                      "id": 1,
+                      "name": "Current Members",
+                      "category": "Member"
+                    },
+                    {
+                      "id": 9,
+                      "name": "All Bookings",
+                      "category": "Booking"
+                    }
+                  ],
+                  "error": null
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "$ref": "#/components/schemas/ReportResponse"
+                      },
+                      "type": "array"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "report": []
+          }
+        ]
+      }
+    },
+    "/api/v2/report/standard_report": {
+      "post": {
+        "tags": [
+          "Report"
+        ],
+        "summary": "Run Report",
+        "description": "\nGenerate the same data as if running a report through Report and Till -> Standard Report\n",
+        "operationId": "api_v2.v2_standard_report",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "start_date": {
+                    "description": "ISO date string",
+                    "examples": [
+                      "2024-06-01"
+                    ],
+                    "title": "Start Date",
+                    "type": "string"
+                  },
+                  "end_date": {
+                    "description": "ISO date string",
+                    "examples": [
+                      "2024-07-01"
+                    ],
+                    "title": "End Date",
+                    "type": "string"
+                  },
+                  "report_id": {
+                    "title": "Report Id",
+                    "type": "integer"
+                  },
+                  "company_id": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Company Id"
+                  },
+                  "displaymode": {
+                    "default": "CURRENT",
+                    "description": "Affects some member-based reports. Controls whether \"casual\"/\"hidden\" memberships are included in the returned data",
+                    "enum": [
+                      "CURRENT",
+                      "ALL",
+                      "HIDDEN"
+                    ],
+                    "title": "Displaymode",
+                    "type": "string"
+                  },
+                  "required_columns": {
+                    "description": "List of field names that should be added to the report",
+                    "examples": [
+                      [
+                        "Member ID",
+                        "Member Name"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string"
+                    },
+                    "title": "Required Columns",
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "start_date",
+                  "end_date",
+                  "report_id"
+                ],
+                "title": "RunReportRequest",
+                "type": "object"
+              }
+            }
+          },
+          "description": "api_request"
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": {
+                    "result": [
+                      {
+                        "Member ID": 1234,
+                        "Member Name": "Alice"
+                      },
+                      {
+                        "Member ID": 1234,
+                        "Member Name": "Bob"
+                      }
+                    ],
+                    "error": null,
+                    "cached_result": false
+                  },
+                  "error": null
+                },
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      "title": "Result",
+                      "type": "array"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Error"
+                    },
+                    "cached_result": {
+                      "description": "Whether this report result has been cached from a previous call to this endpoint. Caching timeout is typically 6 hours.",
+                      "title": "Cached Result",
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "result",
+                    "error",
+                    "cached_result"
+                  ],
+                  "title": "RunReportResponse",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "report": []
+          }
+        ]
+      }
+    },
+    "/api/v2/dashboard/list": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Dashboard List",
+        "description": "List of all dashboard endpoints",
+        "operationId": "api_v2.v2_dashboard_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "example": {
+                  "result": [
+                    {
+                      "type": "kpi",
+                      "endpoint": "kpi.member_new"
+                    },
+                    {
+                      "type": "graph",
+                      "endpoint": "kpi.member_bookings"
+                    }
+                  ],
+                  "error": null
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "items": {
+                        "$ref": "#/components/schemas/DasboardEndpoint"
+                      },
+                      "type": "array"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "report": []
+          }
+        ]
+      }
+    },
+    "/api/v2/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Run Dashboard Endpoint",
+        "description": "Takes a single dashboard endpoint name. The dashboard fields are calculated based off the current date. There is no passing in of dates for this endpoint.",
+        "operationId": "api_v2.v2_dashboard",
+        "parameters": [
+          {
+            "name": "endpoint",
+            "in": "query",
+            "description": "An endpoint returned by `/dashboard/list`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "ISO date string to override the default date the dashboard widget is run as of",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "\n\t\tISO date string to override the default date the dashboard widget is run as of.\n\t\tNote that if both a start and end date is provided, this will completely override any logic the widget uses to determine what dates to fetch data from.\n\t\t",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "result": {
+                      "additionalProperties": true,
+                      "title": "Result",
+                      "type": "object"
+                    },
+                    "error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "title": "Error"
+                    }
+                  },
+                  "required": [
+                    "result",
+                    "error"
+                  ],
+                  "title": "Result[dict[str, Any]]",
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "report": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "KPIRow": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "taxvalue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxvalue"
+          },
+          "tooltip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tooltip"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "formatted_value": {
+            "title": "Formatted Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "metric",
+          "quantity",
+          "taxvalue",
+          "tooltip",
+          "value",
+          "formatted_value"
+        ],
+        "title": "KPIRow",
+        "type": "object"
+      },
+      "DateFilter": {
+        "properties": {
+          "start": {
+            "description": "ISO date string",
+            "examples": [
+              "2024-06-01"
+            ],
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "ISO date string",
+            "examples": [
+              "2024-07-01"
+            ],
+            "title": "End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "DateFilter",
+        "type": "object"
+      },
+      "ReportResponse": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category"
+        ],
+        "title": "ReportResponse",
+        "type": "object"
+      },
+      "DasboardEndpoint": {
+        "properties": {
+          "type": {
+            "enum": [
+              "kpi",
+              "doughnut",
+              "graph"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "endpoint": {
+            "title": "Endpoint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "endpoint"
+        ],
+        "title": "DasboardEndpoint",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "report": {
+        "type": "apiKey",
+        "name": "X-GM-API-KEY",
+        "in": "header",
+        "description": "API Key can be found in Settings -> Integrations -> Report API -> API Key"
+      }
+    }
+  },
+  "security": [
+    {
+      "report": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "KPI",
+      "description": "KPI summary statistics. Equivalent to data in Report & Till -> Key Performance Indicators"
+    },
+    {
+      "name": "Report",
+      "description": "API equivalents to Report & Till -> Standard Report page"
+    },
+    {
+      "name": "Dashboard",
+      "description": "Endpoints for showing data used on the home page dashboard"
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://{client_name}.gymmasteronline.com",
+      "variables": {
+        "client_name": {
+          "default": "YOUR_CLIENT_NAME_HERE"
+        }
+      }
+    }
+  ]
+}
