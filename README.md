@@ -1,87 +1,157 @@
 # gym-master-mcp
 
-Local MCP (Model Context Protocol) server that pulls KPI data from the
-GymMaster Reporting API v2, for the Performance Gaines gym client. The MCP
-server itself comes next; this repo currently ships the first deliverable —
-a key-agnostic API smoke-test harness that validates a service credential
-within seconds of arriving, before any MCP tooling is built on top of it.
+Local **stdio** MCP (Model Context Protocol) server for the [GymMaster](https://gymmasteronline.com) Reporting API v2. Any club with a Reporting API key can install it, register it in Claude Desktop (or another MCP client), and pull KPI fields, standard reports, and membership counts with provenance.
 
-The harness is a small registry of **probes**. Each probe knows how to make
-one minimal authenticated call against a service and classify the result
-(pass / bad key / unreachable host / malformed response). GymMaster is the
-first probe; a Paycor probe will be added the same way later (see
-`.env.example` for the placeholder pattern).
+This package is gym-agnostic: it does not embed a particular club’s membership types, scoreboard layout, or sheet IDs. Club-specific workflows belong in a separate skill or operator notes.
 
 ## Requirements
 
-- Node >=22
-- pnpm 10.x (`packageManager` is pinned in `package.json`)
+- **Node.js 22+** (`node --version`)
+- **pnpm 10.13.1** (pinned via `packageManager` in `package.json`)
+
+### Getting the pinned pnpm
+
+`packageManager` metadata alone does not install pnpm. On a fresh machine:
+
+```bash
+# Option A — Corepack (ships with Node 22+)
+corepack enable
+corepack prepare pnpm@10.13.1 --activate
+
+# Option B — npm global
+npm install -g pnpm@10.13.1
+```
+
+Confirm:
+
+```bash
+pnpm --version   # expect 10.13.1
+```
 
 ## Setup
 
 ```bash
-pnpm install
+git clone https://github.com/yinc-studio/gym-master-mcp.git
+cd gym-master-mcp
+pnpm install --frozen-lockfile
 cp .env.example .env
 ```
 
-Fill in `.env`:
+Edit `.env` (never commit it):
 
 ```
-GYMMASTER_CLUB=performancegaines   # the club subdomain, e.g. https://performancegaines.gymmasteronline.com
-GYMMASTER_API_KEY=<the key, once the client provides it>
+GYMMASTER_CLUB=yourclub          # subdomain only → https://yourclub.gymmasteronline.com
+GYMMASTER_API_KEY=your_api_key
 ```
 
-## Running the smoke test
+| Variable | Required | Meaning |
+|---|---|---|
+| `GYMMASTER_CLUB` | yes | Club subdomain only (not a full URL) |
+| `GYMMASTER_API_KEY` | yes | Reporting API key sent as `X-GM-API-KEY` |
 
-The moment the GymMaster API key arrives, run:
+## Build
+
+Compiled output goes to `dist/` (gitignored). Build before registering the MCP server with Claude Desktop:
+
+```bash
+pnpm build
+```
+
+Entry point: `dist/mcp/index.js` (also available as `pnpm mcp` after build).
+
+## Smoke test
+
+Validates credentials with one read-only call (`GET /api/v2/report/kpi/categories/list`):
 
 ```bash
 pnpm smoke gymmaster
 ```
 
-Running `pnpm smoke` with no arguments lists all available probes and their
-required environment variables — useful for checking the harness works
-before a key exists.
-
-### Expected pass output
-
-```
-Running gymmaster probe...
-PASS: gymmaster
-HTTP 200 from https://performancegaines.gymmasteronline.com/api/v2/report/kpi/categories/list. Received 12 categories.
-```
-
-Exit code `0`.
+`pnpm smoke` with no arguments lists probes and required env vars. Category counts vary by club — treat a `PASS` as connectivity/auth success, not a fixed inventory size.
 
 ### Failure modes
 
 | Situation | What you'll see | Exit code |
 |---|---|---|
-| `.env` not set up / vars missing | `FAIL: gymmaster` + `Missing required environment variable(s): GYMMASTER_CLUB, GYMMASTER_API_KEY` naming exactly which var(s) are absent | 1 |
-| Wrong club subdomain (DNS/unreachable) | `FAIL: gymmaster` + `Network error reaching https://.../...: ...` pointing at `GYMMASTER_CLUB` | 1 |
-| Bad or revoked API key | `FAIL: gymmaster` + `Authentication failed (HTTP 401/403)` pointing at `GYMMASTER_API_KEY` | 1 |
-| Request hangs | `FAIL: gymmaster` + `Timed out after 10000ms waiting for ...` (single attempt, no retries) | 1 |
-| Unexpected status or non-JSON body | `FAIL: gymmaster` + the HTTP status and a body excerpt | 1 |
+| Missing env | `FAIL: gymmaster` + missing `GYMMASTER_CLUB` / `GYMMASTER_API_KEY` | 1 |
+| Wrong club subdomain | Network / unreachable host detail | 1 |
+| Bad or revoked API key | Auth failure (`401` / `403`) | 1 |
+| Timeout | Timed out waiting for the request | 1 |
+| Unexpected response | API / schema classification detail | 1 |
 
-The probe makes exactly one HTTP call (`GET
-/api/v2/report/kpi/categories/list` with header `X-GM-API-KEY`) with a
-~10-second timeout — no retries, so it won't hammer the API while rate
-limits are still unknown.
+## Tests & typecheck
 
-## Development
+No live network in the default suite (fetch is mocked):
 
 ```bash
-pnpm typecheck   # tsc --noEmit
-pnpm test        # vitest, no live network calls — fetch is mocked
+pnpm test
+pnpm typecheck
 ```
 
-## Layout
+## Claude Desktop
 
+1. Build (`pnpm build`) so `dist/mcp/index.js` exists.
+2. Open Claude Desktop → **Settings → Developer → Edit Config**.
+3. Add a server block with an **absolute** path to the compiled entry (and your club credentials):
+
+```json
+{
+  "mcpServers": {
+    "gymmaster-reporting": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/gym-master-mcp/dist/mcp/index.js"],
+      "env": {
+        "GYMMASTER_CLUB": "YOUR_CLUB_SUBDOMAIN",
+        "GYMMASTER_API_KEY": "YOUR_KEY"
+      }
+    }
+  }
+}
 ```
-src/smoke/
-  types.ts       Probe / ProbeResult interfaces
-  gymmaster.ts    GymMaster Reporting API v2 probe
-  index.ts        Probe registry (service name -> Probe)
-  cli.ts          `pnpm smoke [service]` entry point
-  gymmaster.test.ts  Unit tests for outcome classification (mocked fetch)
+
+4. Fully quit and relaunch Claude Desktop so it reloads MCP servers.
+5. Confirm tools such as `list_kpi_fields`, `get_kpis_by_fields`, and `count_memberships` appear.
+
+### Dev alternative
+
+For local iteration without rebuilding:
+
+```bash
+# from the repo root, with .env loaded by your shell or the client env block
+pnpm exec tsx src/mcp/index.ts
 ```
+
+Prefer `node` + absolute `dist/mcp/index.js` for day-to-day Desktop use.
+
+## Operator skill
+
+Generic agent guidance (setup pointer, visiting vs current, discovery, fail-closed behavior) lives in [`skills/gymmaster-reporting/SKILL.md`](skills/gymmaster-reporting/SKILL.md).
+
+## MCP tools (overview)
+
+| Tool | Purpose |
+|---|---|
+| `list_kpi_categories` | List KPI category names |
+| `list_kpi_fields` | List available KPI field names |
+| `get_kpis_by_fields` | Fetch selected KPI fields for an explicit date range |
+| `list_standard_reports` | List standard reports (id, name, category) |
+| `run_standard_report` | Run a report by id for an explicit date range |
+| `count_memberships` | Distinct membership counts / optional caller-supplied buckets |
+
+All dates are ISO `YYYY-MM-DD`. Successful results include provenance (endpoint, request summary, report/field metadata when applicable). Errors are structured — the server does not invent numbers.
+
+## Troubleshooting
+
+| Problem | What to check |
+|---|---|
+| `pnpm: command not found` | Install pinned pnpm (Corepack or `npm install -g pnpm@10.13.1`), then `pnpm --version` |
+| Lockfile / install mismatch | Use `pnpm install --frozen-lockfile` with pnpm **10.13.1** |
+| Smoke fails on auth | Confirm `GYMMASTER_API_KEY`; key is never logged |
+| Smoke fails on network | Confirm `GYMMASTER_CLUB` is the subdomain only (e.g. `yourclub`, not a URL) |
+| Claude shows no tools | Rebuild (`pnpm build`); args path must be absolute and point at `dist/mcp/index.js`; fully restart Desktop |
+| Server exits immediately | Run `node /ABSOLUTE/PATH/TO/dist/mcp/index.js` in a terminal with the same env to see stderr |
+| Wrong Node version | Need Node 22+ (`node --version`) |
+
+## License
+
+MIT — see [LICENSE](LICENSE).

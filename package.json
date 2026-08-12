@@ -1,20 +1,38 @@
 {
   "name": "gym-master-mcp",
   "version": "0.1.0",
-  "private": true,
-  "description": "Local MCP server for GymMaster Reporting API v2 KPI data (Performance Gaines).",
+  "description": "Local stdio MCP server for GymMaster Reporting API v2 — KPI fields, standard reports, and membership counts for any club.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yinc-studio/gym-master-mcp.git"
+  },
+  "homepage": "https://github.com/yinc-studio/gym-master-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/yinc-studio/gym-master-mcp/issues"
+  },
+  "keywords": [
+    "gymmaster",
+    "mcp",
+    "model-context-protocol",
+    "reporting"
+  ],
   "type": "module",
   "packageManager": "pnpm@10.13.1",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
+    "build": "tsc",
+    "mcp": "node dist/mcp/index.js",
     "smoke": "tsx src/smoke/cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "dotenv": "^16.4.5"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "dotenv": "^16.4.5",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
