@@ -17,7 +17,12 @@ Follow the repository [README](../../README.md):
 4. `pnpm build` → register `node` + absolute `dist/mcp/index.js` in the MCP client
 5. Optional connectivity check: `pnpm smoke gymmaster`
 
-**Never put API keys (or full `.env` contents) in chat.** If credentials are missing or wrong, say which variable to fix — do not ask the user to paste the key into the conversation.
+### Secrets (binding)
+
+- **Never** ask the user to paste an API key (or full `.env`) into the chat.
+- **Never** request, accept, or echo the key in the conversation.
+- When configuring Claude Desktop or `.env`: write/merge the config yourself; set `GYMMASTER_API_KEY` to a placeholder such as `PASTE_KEY_HERE` (or leave blank); **open the file** in the editor; tell the user to paste the real value into that field in the open file and save.
+- If credentials are missing or wrong, name the variable / file path to fix — do not collect the secret via chat.
 
 ## Visiting vs current
 

@@ -91,8 +91,8 @@ pnpm typecheck
 ## Claude Desktop
 
 1. Build (`pnpm build`) so `dist/mcp/index.js` exists.
-2. Open Claude Desktop → **Settings → Developer → Edit Config**.
-3. Add a server block with an **absolute** path to the compiled entry (and your club credentials):
+2. Open Claude Desktop → **Settings → Developer → Edit Config** (opens `claude_desktop_config.json`).
+3. Add a server block with an **absolute** path to the compiled entry. Use a **placeholder** for the API key (do not put a real key in chat or commit history):
 
 ```json
 {
@@ -101,16 +101,31 @@ pnpm typecheck
       "command": "node",
       "args": ["/ABSOLUTE/PATH/TO/gym-master-mcp/dist/mcp/index.js"],
       "env": {
-        "GYMMASTER_CLUB": "YOUR_CLUB_SUBDOMAIN",
-        "GYMMASTER_API_KEY": "YOUR_KEY"
+        "GYMMASTER_CLUB": "yourclub",
+        "GYMMASTER_API_KEY": "PASTE_KEY_HERE"
       }
     }
   }
 }
 ```
 
-4. Fully quit and relaunch Claude Desktop so it reloads MCP servers.
-5. Confirm tools such as `list_kpi_fields`, `get_kpis_by_fields`, and `count_memberships` appear.
+4. In the open config file, replace `PASTE_KEY_HERE` with the real Reporting API key (and set the club subdomain). Save the file.
+5. Fully quit and relaunch Claude Desktop so it reloads MCP servers.
+6. Confirm tools such as `list_kpi_fields`, `get_kpis_by_fields`, and `count_memberships` appear.
+
+### Agent-assisted install (required secret handling)
+
+When an agent installs or configures this MCP for a user:
+
+1. **Do not ask the user to paste the API key into the chat.** Never request, accept, or echo the key in the conversation.
+2. The agent **writes/merges** the `gymmaster-reporting` block into `claude_desktop_config.json` itself (macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`), including `command`, absolute `args` to `dist/mcp/index.js`, and `GYMMASTER_CLUB` when known.
+3. For `GYMMASTER_API_KEY`, the agent leaves a clear placeholder such as `PASTE_KEY_HERE`, **opens the config file** in the editor, and tells the user to paste the real value into that field in the file and save.
+4. Same rule for a local `.env`: agent may create `.env` from `.env.example` with `GYMMASTER_API_KEY=` blank or `PASTE_KEY_HERE`, open the file, and ask the user to paste there — not in chat.
+5. Then tell the user to fully quit and relaunch Claude Desktop and how to verify tools appear.
+
+Pasteable prompt for the user to give an agent:
+
+> Install https://github.com/yinc-studio/gym-master-mcp for Claude Desktop on this machine. Follow the README. Ensure Node 22+ and pnpm 10.13.1, then `pnpm install --frozen-lockfile`, `pnpm build`, and `pnpm smoke gymmaster` once a key is in `.env`. Merge `gymmaster-reporting` into `~/Library/Application Support/Claude/claude_desktop_config.json` with `node` and an absolute path to `dist/mcp/index.js`. **Do not ask me to paste the API key in chat.** Open the config (and `.env` if needed), leave `PASTE_KEY_HERE` / blank for the key, and tell me to paste the key into the open file and save. Then tell me to fully restart Claude Desktop and how to verify the tools.
 
 ### Dev alternative
 
